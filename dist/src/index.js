@@ -121,6 +121,7 @@ class TCP {
         return new TCPListener({
             ...options,
             maxConnections: this.opts.maxConnections,
+            backlog: this.opts.backlog,
             closeServerOnMaxConnections: this.opts.closeServerOnMaxConnections,
             socketInactivityTimeout: this.opts.inboundSocketInactivityTimeout,
             socketCloseTimeout: this.opts.socketCloseTimeout,

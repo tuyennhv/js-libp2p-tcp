@@ -17,6 +17,7 @@ interface Context extends TCPCreateListenerOptions {
     socketInactivityTimeout?: number;
     socketCloseTimeout?: number;
     maxConnections?: number;
+    backlog?: number;
     metrics?: Metrics;
     closeServerOnMaxConnections?: CloseServerOnMaxConnectionsOpts;
 }
