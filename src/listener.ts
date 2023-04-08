@@ -57,6 +57,7 @@ export interface TCPListenerMetrics {
 type Status = {started: false} | {
   started: true
   listeningAddr: Multiaddr
+  listenOnUnixPath: boolean
   peerId: string | null
   netConfig: NetConfig
 }
@@ -89,6 +90,10 @@ export class TCPListener extends EventEmitter<ListenerEvents> implements Listene
       if (context.closeServerOnMaxConnections.closeAbove < context.closeServerOnMaxConnections.listenBelow) {
         throw Error('closeAbove must be >= listenBelow')
       }
+    }
+
+    if (context.backlog != null && context.backlog <= 0) {
+      throw Error('backlog must be > 0')
     }
 
     this.server
@@ -160,7 +165,7 @@ export class TCPListener extends EventEmitter<ListenerEvents> implements Listene
     let maConn: MultiaddrConnection
     try {
       maConn = toMultiaddrConnection(socket, {
-        listeningAddr: this.status.started ? this.status.listeningAddr : undefined,
+        listening: this.status.started ? {addr: this.status.listeningAddr, onUnixPath: this.status.listenOnUnixPath } : undefined,
         socketInactivityTimeout: this.context.socketInactivityTimeout,
         socketCloseTimeout: this.context.socketCloseTimeout,
         metrics: this.metrics?.events,
@@ -269,12 +274,16 @@ export class TCPListener extends EventEmitter<ListenerEvents> implements Listene
 
     const peerId = ma.getPeerId()
     const listeningAddr = peerId == null ? ma.decapsulateCode(CODE_P2P) : ma
+    const listenOnUnixPath = listeningAddr.getPath() != null
+    const netConfig = multiaddrToNetConfig(listeningAddr)
+    const { backlog } = this.context
 
     this.status = {
       started: true,
       listeningAddr,
+      listenOnUnixPath,
       peerId,
-      netConfig: multiaddrToNetConfig(listeningAddr)
+      netConfig: backlog ? { ...netConfig, backlog } : netConfig
     }
 
     await this.netListen()
